@@ -1,0 +1,1 @@
+python main.py --root_path data/hvu/ --video_path jpg --annotation_path val_hvu.json --result_path results --dataset hvu --model resnet --model_depth 50 --n_classes 3142 --batch_size 64 --n_threads 2 --checkpoint 5 --sample_t_stride 2 --sample_duration 3 --no_val

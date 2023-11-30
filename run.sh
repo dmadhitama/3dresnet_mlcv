@@ -1,1 +1,0 @@
-CUDA_VISIBLE_DEVICES=0 python main.py --root_path /media/mikael/Drive/lab/project/multilabels/resnet3d/data/ucf101 --video_path jpg --annotation_path ucf101_01.json --result_path results --dataset ucf101 --model resnet --model_depth 50 --n_classes 101 --batch_size 16 --n_threads 1 --checkpoint 5 --sample_t_stride 8 --sample_duration 4

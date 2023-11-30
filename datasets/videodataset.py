@@ -5,6 +5,7 @@ import torch
 import torch.utils.data as data
 
 from .loader import VideoLoader
+from utils import Colors, print_color 
 
 
 def get_class_labels(data):
@@ -23,7 +24,7 @@ def get_database_multi(data, subset, root_path, video_path_formatter):
 
     for key, value in data['database'].items():
         this_subset = value['subset']
-        if this_subset == subset:
+        if this_subset == subset or True:
             video_ids.append(key)
             annotations.append(value['labels'])
             segments.append(value['segment'])
@@ -33,25 +34,6 @@ def get_database_multi(data, subset, root_path, video_path_formatter):
                 video_paths.append(video_path_formatter(root_path, key))
 
     return video_ids, video_paths, annotations, segments
-
-def get_database(data, subset, root_path, video_path_formatter):
-    video_ids = []
-    video_paths = []
-    annotations = []
-
-    for key, value in data['database'].items():
-        this_subset = value['subset']
-        if this_subset == subset:
-            video_ids.append(key)
-            annotations.append(value['annotations'])
-            if 'video_path' in value:
-                video_paths.append(Path(value['video_path']))
-            else:
-                label = value['annotations']['label']
-                video_paths.append(video_path_formatter(root_path, label, key))
-
-    return video_ids, video_paths, annotations
-
 
 class VideoDataset(data.Dataset):
 
@@ -85,8 +67,7 @@ class VideoDataset(data.Dataset):
                        video_path_formatter):
         with annotation_path.open('r') as f:
             data = json.load(f)
-        video_ids, video_paths, annotations, segments = get_database_multi(
-            data, subset, root_path, video_path_formatter)
+        video_ids, video_paths, annotations, segments = get_database_multi(data, subset, root_path, video_path_formatter)
         class_to_idx = get_class_labels(data)
         idx_to_class = {}
         for name, label in class_to_idx.items():
@@ -96,15 +77,10 @@ class VideoDataset(data.Dataset):
 
         for i in range(n_videos):
             if i % (n_videos // 5) == 0:
-                print('dataset loading [{}/{}]'.format(i, len(video_ids)))
+                print_color('Load Dataset [{}/{}]'.format(i, len(video_ids)), Colors.MAGENTA)
             
             label_id = [class_to_idx[label] for label in annotations[i]]
     
-            # if 'label' in annotations[i]:
-            #     label_id = class_to_idx[label]
-            # else:
-            #     label = 'test'
-            #     label_id = -1
 
             video_path = video_paths[i]
             if not video_path.exists():
@@ -128,7 +104,6 @@ class VideoDataset(data.Dataset):
 
     def __loading(self, path, frame_indices):
         clip = self.loader(path, frame_indices)
-        # print("CLIP: ", len(clip))
 
         if self.spatial_transform is not None:
             self.spatial_transform.randomize_parameters()
@@ -141,25 +116,22 @@ class VideoDataset(data.Dataset):
         path = self.data[index]['video']
         if isinstance(self.target_type, list):
             target = [self.data[index][t] for t in self.target_type]
-            # print(f"IS INSTANCE ========================> {target}")
         else:
             target = self.data[index][self.target_type]
-            # print(f"NOT INSTANCE ========================> {target}")
 
         frame_indices = self.data[index]['frame_indices']
-        # print("FRAME IDX BEFORE: ", len(frame_indices))
-        # print(frame_indices)
+
         if self.temporal_transform is not None:
             frame_indices = self.temporal_transform(frame_indices)
-        #     print("FRAME IDX AFTER: ", len(frame_indices))
-        # print(frame_indices)
-
+            
         clip = self.__loading(path, frame_indices)
-        # print(clip.shape)
+
         if self.target_transform is not None:
             target = self.target_transform(target)
-        # print(len(target))
-        return clip, target[0]
+
+        one_hot_targets = torch.zeros(len(self.class_names))
+        one_hot_targets[target] = 1
+        return clip, one_hot_targets
 
     def __len__(self):
         return len(self.data)
