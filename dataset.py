@@ -18,15 +18,14 @@ def get_training_data(video_path,
     loader = VideoLoader(image_name_formatter)
     video_path_formatter = (lambda root_path, video_id: root_path / video_id)
 
-    
     training_data = VideoDataset(video_path,
-                                    annotation_path,
-                                    'training',
-                                    spatial_transform=spatial_transform,
-                                    temporal_transform=temporal_transform,
-                                    target_transform=target_transform,
-                                    video_loader=loader,
-                                    video_path_formatter=video_path_formatter)
+                                annotation_path,
+                                'training',
+                                spatial_transform=spatial_transform,
+                                temporal_transform=temporal_transform,
+                                target_transform=target_transform,
+                                video_loader=loader,
+                                video_path_formatter=video_path_formatter)
 
     return training_data
 
