@@ -17,6 +17,7 @@ class Colors:
 def print_color(text, color):
     print(color + text + Colors.RESET)
 
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 

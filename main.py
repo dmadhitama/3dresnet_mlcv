@@ -38,17 +38,10 @@ def get_opt():
     opt = parse_opts()
 
     if opt.root_path is not None:
-        opt.video_path = opt.root_path / opt.video_path
+        opt.train_path = opt.root_path / opt.train_path
+        opt.val_path = opt.root_path / opt.val_path
         opt.annotation_path = opt.root_path / opt.annotation_path
         opt.result_path = opt.root_path / opt.result_path
-        if opt.resume_path is not None:
-            opt.resume_path = opt.root_path / opt.resume_path
-        if opt.pretrain_path is not None:
-            opt.pretrain_path = opt.root_path / opt.pretrain_path
-
-    if opt.pretrain_path is not None:
-        opt.n_finetune_classes = opt.n_classes
-        opt.n_classes = opt.n_pretrain_classes
 
     opt.arch = '{}-{}'.format(opt.model, opt.model_depth)
     opt.begin_epoch = 1
@@ -63,7 +56,7 @@ def get_opt():
 
 
 def get_train_utils(opt, model_parameters):
-    print_color("Get Train Dataset", Colors.RED)
+    print_color("Get Train Dataset", Colors.YELLOW)
     assert opt.train_crop in ['random', 'corner', 'center']
     spatial_transform = []
 
@@ -104,7 +97,7 @@ def get_train_utils(opt, model_parameters):
         temporal_transform.append(TemporalCenterCrop(opt.sample_duration))
     temporal_transform = TemporalCompose(temporal_transform)
 
-    train_data = get_training_data(opt.video_path, opt.annotation_path,
+    train_data = get_training_data(opt.train_path, opt.annotation_path,
                                    opt.dataset, spatial_transform, temporal_transform)
 
     train_loader = torch.utils.data.DataLoader(train_data,
@@ -137,7 +130,7 @@ def get_train_utils(opt, model_parameters):
     return (train_loader, optimizer, scheduler)
 
 def get_val_utils(opt):
-    print_color("Get Validation Dataset", Colors.RED)
+    print_color("Get Validation Dataset", Colors.YELLOW)
     normalize = Normalize(opt.mean, opt.std)
 
     spatial_transform = [
@@ -162,10 +155,10 @@ def get_val_utils(opt):
 
     temporal_transform = TemporalCompose(temporal_transform)
 
-    val_data = get_validation_data(opt.video_path,
-                                               opt.annotation_path, opt.dataset,
-                                               spatial_transform,
-                                               temporal_transform)
+    val_data = get_validation_data(opt.val_path,
+                                    opt.annotation_path, opt.dataset,
+                                    spatial_transform,
+                                    temporal_transform)
 
 
     val_loader = torch.utils.data.DataLoader(val_data,
