@@ -321,9 +321,11 @@ def main_worker(index, opt):
     torch.manual_seed(opt.manual_seed)
 
     if index >= 0 and opt.device.type == 'cuda':
+        print("<<<<<======================== TORCH DEVICE ========================>>>>>")
         opt.device = torch.device(f'cuda:{index}')
 
     if opt.distributed:
+        print("<<<<<======================== TORCH DISTRIBUTED ========================>>>>>")
         opt.dist_rank = opt.dist_rank * opt.ngpus_per_node + index
         dist.init_process_group(backend='nccl',
                                 init_method=opt.dist_url,
@@ -332,16 +334,20 @@ def main_worker(index, opt):
         opt.batch_size = int(opt.batch_size / opt.ngpus_per_node)
         opt.n_threads = int(
             (opt.n_threads + opt.ngpus_per_node - 1) / opt.ngpus_per_node)
+        
     opt.is_master_node = not opt.distributed or opt.dist_rank == 0
 
     model = generate_model(opt)
     if opt.batchnorm_sync:
+        print("<<<<<======================== BATCHNORM ========================>>>>>")
         assert opt.distributed, 'SyncBatchNorm only supports DistributedDataParallel.'
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     if opt.pretrain_path:
+        print("<<<<<======================== LOAD PRETRAIN ========================>>>>>")
         model = load_pretrained_model(model, opt.pretrain_path, opt.model,
                                       opt.n_finetune_classes)
     if opt.resume_path is not None:
+        print("<<<<<======================== RESUME ========================>>>>>")
         model = resume_model(opt.resume_path, opt.arch, model)
     model = make_data_parallel(model, opt.distributed, opt.device)
 
@@ -350,12 +356,13 @@ def main_worker(index, opt):
     else:
         parameters = model.parameters()
 
-    if opt.is_master_node:
-        print(model)
+    # if opt.is_master_node:
+    #     print(model)
 
     criterion = CrossEntropyLoss().to(opt.device)
 
     if not opt.no_train:
+        print("<<<<<======================== NO TRAIN ========================>>>>>")
         (train_loader, train_sampler, train_logger, train_batch_logger,
          optimizer, scheduler) = get_train_utils(opt, parameters)
         if opt.resume_path is not None:
@@ -364,9 +371,11 @@ def main_worker(index, opt):
             if opt.overwrite_milestones:
                 scheduler.milestones = opt.multistep_milestones
     if not opt.no_val:
+        print("<<<<<======================== NO VAL ========================>>>>>")
         val_loader, val_logger = get_val_utils(opt)
 
     if opt.tensorboard and opt.is_master_node:
+        print("<<<<<======================== TENSORBOARD ========================>>>>>")
         from torch.utils.tensorboard import SummaryWriter
         if opt.begin_epoch == 1:
             tb_writer = SummaryWriter(log_dir=opt.result_path)
@@ -378,20 +387,26 @@ def main_worker(index, opt):
 
     prev_val_loss = None
     for i in range(opt.begin_epoch, opt.n_epochs + 1):
+        print("<<<<<======================== START TRAINING ========================>>>>>")
         if not opt.no_train:
             if opt.distributed:
+                print("<<<<<======================== SAMPLER TRAINING ========================>>>>>")
                 train_sampler.set_epoch(i)
+            
+            print(f"<<<<<======================== EPOCH {i} ========================>>>>>")
             current_lr = get_lr(optimizer)
             train_epoch(i, train_loader, model, criterion, optimizer,
                         opt.device, current_lr, train_logger,
                         train_batch_logger, tb_writer, opt.distributed)
 
             if i % opt.checkpoint == 0 and opt.is_master_node:
+                print("<<<<<======================== SAVE CKPT ========================>>>>>")
                 save_file_path = opt.result_path / 'save_{}.pth'.format(i)
                 save_checkpoint(save_file_path, i, opt.arch, model, optimizer,
                                 scheduler)
 
         if not opt.no_val:
+            print(f"<<<<<======================== VAL {i} ========================>>>>>")
             prev_val_loss = val_epoch(i, val_loader, model, criterion,
                                       opt.device, val_logger, tb_writer,
                                       opt.distributed)
@@ -416,13 +431,17 @@ if __name__ == '__main__':
 
     opt.device = torch.device('cpu' if opt.no_cuda else 'cuda')
     if not opt.no_cuda:
+        print("<<<<<======================== NO CUDA ========================>>>>>")
         cudnn.benchmark = True
     if opt.accimage:
+        print("<<<<<========================  ACC IMAGE ========================>>>>>")
         torchvision.set_image_backend('accimage')
 
     opt.ngpus_per_node = torch.cuda.device_count()
     if opt.distributed:
+        print("<<<<<========================  DISTRIBUTED ========================>>>>>")
         opt.world_size = opt.ngpus_per_node * opt.world_size
         mp.spawn(main_worker, nprocs=opt.ngpus_per_node, args=(opt,))
     else:
+        print("<<<<<========================  SINGLE ========================>>>>>")
         main_worker(-1, opt)

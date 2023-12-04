@@ -32,7 +32,7 @@ def train_epoch(epoch,
     end_time = time.time()
     for i, (inputs, targets) in enumerate(data_loader):
         data_time.update(time.time() - end_time)
-
+        print("<<<<<======================== training.py ========================>>>>>")
         targets = targets.to(device, non_blocking=True)
         outputs = model(inputs)
         loss = criterion(outputs, targets)

@@ -8,7 +8,7 @@ from datasets.loader import VideoLoader, VideoLoaderHDF5, VideoLoaderFlowHDF5
 
 
 def image_name_formatter(x):
-    return f'image_{x:05d}.jpg'
+    return f'img_{x:05d}.jpg'
 
 
 def get_training_data(video_path,
@@ -20,22 +20,32 @@ def get_training_data(video_path,
                       temporal_transform=None,
                       target_transform=None):
     assert dataset_name in [
-        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit'
+        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit', 'hvu'
     ]
     assert input_type in ['rgb', 'flow']
     assert file_type in ['jpg', 'hdf5']
 
     if file_type == 'jpg':
+        print("<<<<<======================== JPG ========================>>>>>")
         assert input_type == 'rgb', 'flow input is supported only when input type is hdf5.'
 
         if get_image_backend() == 'accimage':
+            print("<<<<<======================== accimage ========================>>>>>")
             from datasets.loader import ImageLoaderAccImage
             loader = VideoLoader(image_name_formatter, ImageLoaderAccImage())
         else:
+            print("<<<<<======================== non accimage ========================>>>>>")
+            print(image_name_formatter)
             loader = VideoLoader(image_name_formatter)
-
-        video_path_formatter = (
-            lambda root_path, label, video_id: root_path / label / video_id)
+        
+        if dataset_name != 'hvu':
+            print("<<<<<======================== NON HVU VIDEO VORMATER ========================>>>>>")
+            video_path_formatter = (
+                lambda root_path, label, video_id: root_path / label / video_id)
+        else:
+            print("<<<<<======================== HVU VIDEO VORMATER ========================>>>>>")
+            video_path_formatter = (
+                lambda root_path, video_id: root_path / video_id)
     else:
         if input_type == 'rgb':
             loader = VideoLoaderHDF5()
@@ -54,6 +64,7 @@ def get_training_data(video_path,
                                     video_loader=loader,
                                     video_path_formatter=video_path_formatter)
     else:
+        print("<<<<<======================== UCF101 ========================>>>>>")
         training_data = VideoDataset(video_path,
                                      annotation_path,
                                      'training',
@@ -75,7 +86,7 @@ def get_validation_data(video_path,
                         temporal_transform=None,
                         target_transform=None):
     assert dataset_name in [
-        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit'
+        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit', 'hvu'
     ]
     assert input_type in ['rgb', 'flow']
     assert file_type in ['jpg', 'hdf5']
@@ -89,8 +100,14 @@ def get_validation_data(video_path,
         else:
             loader = VideoLoader(image_name_formatter)
 
-        video_path_formatter = (
-            lambda root_path, label, video_id: root_path / label / video_id)
+        if dataset_name != 'hvu':
+            print("<<<<<======================== NON HVU VIDEO VORMATER ========================>>>>>")
+            video_path_formatter = (
+                lambda root_path, label, video_id: root_path / label / video_id)
+        else:
+            print("<<<<<======================== HVU VIDEO VORMATER ========================>>>>>")
+            video_path_formatter = (
+                lambda root_path, video_id: root_path / video_id)
     else:
         if input_type == 'rgb':
             loader = VideoLoaderHDF5()
@@ -132,7 +149,7 @@ def get_inference_data(video_path,
                        temporal_transform=None,
                        target_transform=None):
     assert dataset_name in [
-        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit'
+        'kinetics', 'activitynet', 'ucf101', 'hmdb51', 'mit', 'hvu'
     ]
     assert input_type in ['rgb', 'flow']
     assert file_type in ['jpg', 'hdf5']

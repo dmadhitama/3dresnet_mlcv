@@ -29,6 +29,7 @@ def val_epoch(epoch,
 
     with torch.no_grad():
         for i, (inputs, targets) in enumerate(data_loader):
+            print("<<<<<======================== validation.py ========================>>>>>")
             data_time.update(time.time() - end_time)
 
             targets = targets.to(device, non_blocking=True)
