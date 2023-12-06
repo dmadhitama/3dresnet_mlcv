@@ -44,5 +44,4 @@ List the contributors to the project.
 ## License
 
 Specify the license for your project.
-```bash
 ```

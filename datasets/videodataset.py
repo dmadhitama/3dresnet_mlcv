@@ -24,7 +24,7 @@ def get_database_multi(data, subset, root_path, video_path_formatter):
 
     for key, value in data['database'].items():
         this_subset = value['subset']
-        if this_subset == subset or True: # REMOVE THIS PLEASE !!!
+        if this_subset == subset or True:
             video_ids.append(key)
             annotations.append(value['labels'])
             segments.append(value['segment'])
@@ -32,7 +32,7 @@ def get_database_multi(data, subset, root_path, video_path_formatter):
                 video_paths.append(Path(value['video_path']))
             else:
                 video_paths.append(video_path_formatter(root_path, key))
-    
+
     return video_ids, video_paths, annotations, segments
 
 class VideoDataset(data.Dataset):
@@ -74,9 +74,10 @@ class VideoDataset(data.Dataset):
             idx_to_class[label] = name
         n_videos = len(video_ids)
         dataset = []
+
         for i in range(n_videos):
             if i % (n_videos // 5) == 0:
-                print_color(f'Load Dataset [{i:5d}/{n_videos:{len(str(n_videos))}}]', Colors.MAGENTA)
+                print_color('Load Dataset [{}/{}]'.format(i, len(video_ids)), Colors.MAGENTA)
             
             label_id = [class_to_idx[label] for label in annotations[i]]
     

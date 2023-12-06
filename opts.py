@@ -9,15 +9,10 @@ def parse_opts():
                         type=Path,
                         help='Root directory path')
     
-    parser.add_argument('--train_path',
+    parser.add_argument('--video_path',
                         default=None,
                         type=Path,
-                        help='Directory path of train frames')
-    
-    parser.add_argument('--val_path',
-                        default=None,
-                        type=Path,
-                        help='Directory path of validation frames')
+                        help='Directory path of videos')
     
     parser.add_argument('--annotation_path',
                         default=None,
@@ -33,20 +28,24 @@ def parse_opts():
         '--dataset',
         default='kinetics',
         type=str,
-        help='Used dataset (hvu)')
-    
+        help='Used dataset (activitynet | kinetics | ucf101 | hmdb51 | hvu)')
     parser.add_argument(
         '--n_classes',
         default=400,
         type=int,
         help=
-        'Number of classes (hvu:3124)'
+        'Number of classes (activitynet: 200, kinetics: 400 or 600, ucf101: 101, hmdb51: 51, hvu:3124)'
     )
-    
-    parser.add_argument('--sample_size',
-                        default=112,
+    parser.add_argument('--n_pretrain_classes',
+                        default=0,
                         type=int,
-                        help='Height and width of inputs')
+                        help=('Number of classes of pretraining task.'
+                              'When using --pretrain_path, this must be set.'))
+    
+    parser.add_argument('--pretrain_path',
+                        default=None,
+                        type=Path,
+                        help='Pretrained model path (.pth).')
     
     parser.add_argument(
         '--ft_begin_module',
@@ -55,6 +54,11 @@ def parse_opts():
         help=('Module name of beginning of fine-tuning'
               '(conv1, layer1, fc, denseblock1, classifier, ...).'
               'The default means all layers are fine-tuned.'))
+    
+    parser.add_argument('--sample_size',
+                        default=112,
+                        type=int,
+                        help='Height and width of inputs')
     
     parser.add_argument('--sample_duration',
                         default=16,
@@ -117,6 +121,7 @@ def parse_opts():
                         help=('dataset for mean values of mean subtraction'
                               '(activitynet | kinetics | 0.5)'))
     
+    
     parser.add_argument(
         '--value_scale',
         default=1,
@@ -144,7 +149,19 @@ def parse_opts():
         type=int,
         nargs='+',
         help='Milestones of LR scheduler. See documentation of MultistepLR.')
+    
+    parser.add_argument(
+        '--overwrite_milestones',
+        action='store_true',
+        help='If true, overwriting multistep_milestones when resuming training.'
+    )
 
+    parser.add_argument(
+        '--plateau_patience',
+        default=10,
+        type=int,
+        help='Patience of LR scheduler. See documentation of ReduceLROnPlateau.'
+    )
     parser.add_argument('--batch_size',
                         default=128,
                         type=int,
@@ -171,6 +188,10 @@ def parse_opts():
     parser.add_argument('--no_val',
                         action='store_true',
                         help='If true, validation is not performed.')
+    
+    parser.add_argument('--no_cuda',
+                        action='store_true',
+                        help='If true, cuda is not used.')
     
     parser.add_argument('--n_threads',
                         default=4,
@@ -222,13 +243,29 @@ def parse_opts():
     parser.add_argument('--input_type',
                         default='rgb',
                         type=str,
-                        help='(rgb)')
+                        help='(rgb | flow)')
     
     parser.add_argument('--manual_seed',
                         default=1,
                         type=int,
                         help='Manually set random seed')
     
+    parser.add_argument('--file_type',
+                        default='jpg',
+                        type=str,
+                        help='(jpg | hdf5)')
+    
+    parser.add_argument('--tensorboard',
+                        action='store_true',
+                        help='If true, output tensorboard log file.')
+    
+    parser.add_argument(
+        '--distributed',
+        action='store_true',
+        help='Use multi-processing distributed training to launch '
+        'N processes per node, which has N GPUs.')
+
+
     args = parser.parse_args()
 
     return args
