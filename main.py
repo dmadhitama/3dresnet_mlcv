@@ -187,7 +187,7 @@ def main_worker(opt):
     random.seed(opt.manual_seed)
     np.random.seed(opt.manual_seed)
     torch.manual_seed(opt.manual_seed)
-
+    loss_scale = 333.0
         
     model = generate_model(opt)
     if torch.cuda.device_count() > 1:
@@ -197,8 +197,7 @@ def main_worker(opt):
     model.to(opt.device)
 
     parameters = model.parameters()
-    class_weights = torch.ones(3142) * 333.0
-    
+    class_weights = torch.ones(opt.n_classes) * loss_scale
     criterion = BCEWithLogitsLoss(weight=class_weights).to(opt.device)
 
     if not opt.no_train:

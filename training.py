@@ -1,6 +1,5 @@
 from utils import AverageMeter
 from utils import Colors, print_color, get_lr
-import numpy as np
 import time
 
 def train_epoch(epoch,
@@ -21,7 +20,7 @@ def train_epoch(epoch,
         targets = targets.to(device, non_blocking=True)
         outputs = model(inputs)
         loss = criterion(outputs, targets)
-        # import pdb; pdb.set_trace()
+
         losses.update(loss.item(), inputs.size(0))
 
         optimizer.zero_grad()

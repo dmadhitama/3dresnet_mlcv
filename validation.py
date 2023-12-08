@@ -38,11 +38,9 @@ def val_epoch(epoch,
             if tb_writer is not None:
                 tb_writer.add_scalar('val/batch/loss', losses.avg, i)
 
-        # After the epoch, calculate overall mAP
         all_predictions = np.concatenate(all_predictions, axis=0)
         all_targets = np.concatenate(all_targets, axis=0)
 
-        # Compute mAP using sklearn's average_precision_score
         epoch_mAP = average_precision_score(all_targets, all_predictions, average='macro')
 
         print_color(f'Validating {epoch:3} | mAP {epoch_mAP:5f}', Colors.BLUE)

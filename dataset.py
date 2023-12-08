@@ -20,7 +20,7 @@ def get_training_data(video_path,
 
     training_data = VideoDataset(video_path,
                                 annotation_path,
-                                'validation', # CHANGE THIS !!
+                                'training',
                                 spatial_transform=spatial_transform,
                                 temporal_transform=temporal_transform,
                                 target_transform=target_transform,

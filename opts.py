@@ -94,7 +94,7 @@ def parse_opts():
                               '(random | center)'))
     
     parser.add_argument('--learning_rate',
-                        default=0.01,
+                        default=0.1,
                         type=float,
                         help=('Initial learning rate'
                               '(divided by 10 while training by lr scheduler)'))
@@ -140,7 +140,7 @@ def parse_opts():
     
     parser.add_argument(
         '--multistep_milestones',
-        default=[1, 2, 3],
+        default=[50, 100, 150],
         type=int,
         nargs='+',
         help='Milestones of LR scheduler. See documentation of MultistepLR.')
