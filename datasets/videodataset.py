@@ -24,7 +24,7 @@ def get_database_multi(data, subset, root_path, video_path_formatter):
 
     for key, value in data['database'].items():
         this_subset = value['subset']
-        if this_subset == subset or True: # REMOVE THIS PLEASE !!!
+        if this_subset == subset:
             video_ids.append(key)
             annotations.append(value['labels'])
             segments.append(value['segment'])
@@ -76,7 +76,7 @@ class VideoDataset(data.Dataset):
         dataset = []
         for i in range(n_videos):
             if i % (n_videos // 5) == 0:
-                print_color(f'Load Dataset [{i:5d}/{n_videos:{len(str(n_videos))}}]', Colors.MAGENTA)
+                print_color(f'Load Dataset [{i:{len(str(n_videos))}}/{n_videos}]', Colors.MAGENTA)
             
             label_id = [class_to_idx[label] for label in annotations[i]]
     

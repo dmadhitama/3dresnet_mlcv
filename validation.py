@@ -9,7 +9,8 @@ def val_epoch(epoch,
               data_loader,
               model,
               criterion,
-              device):
+              device,
+              tb_writer):
 
     model.eval()
 
@@ -32,8 +33,11 @@ def val_epoch(epoch,
             all_targets.extend(targets.cpu().detach().numpy())
 
             end_time = time.time()
-            print_color(f'Validating {epoch:2d} | Step [{i:{len(str(len(data_loader)))}}/{len(data_loader)}] | Elapsed Time {end_time - start_time:.3f} | Loss {losses.avg:.5f}', Colors.GREEN)
-           
+            print_color(f'Validating {epoch:2d} | Step [{i:{len(str(len(data_loader)))}}/{len(data_loader)}] | Elapsed Time {end_time - start_time:.3f} | Loss {losses.avg:.5f}', Colors.YELLOW)
+
+            if tb_writer is not None:
+                tb_writer.add_scalar('val/batch/loss', losses.avg, i)
+
         # After the epoch, calculate overall mAP
         all_predictions = np.concatenate(all_predictions, axis=0)
         all_targets = np.concatenate(all_targets, axis=0)
@@ -42,5 +46,9 @@ def val_epoch(epoch,
         epoch_mAP = average_precision_score(all_targets, all_predictions, average='macro')
 
         print_color(f'Validating {epoch:3} | mAP {epoch_mAP:5f}', Colors.BLUE)
+
+        if tb_writer is not None:
+            tb_writer.add_scalar('val/epoch/loss', losses.avg, epoch)
+            tb_writer.add_scalar('val/epoch/map', epoch_mAP, epoch)
 
     return losses.avg

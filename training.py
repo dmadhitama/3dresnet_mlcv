@@ -1,6 +1,5 @@
 from utils import AverageMeter
-from utils import Colors, print_color
-from sklearn.metrics import average_precision_score
+from utils import Colors, print_color, get_lr
 import numpy as np
 import time
 
@@ -9,13 +8,12 @@ def train_epoch(epoch,
                 model,
                 criterion,
                 optimizer,
-                device):
+                device,
+                tb_writer):
     model.train()
 
     losses = AverageMeter()
-    
-    all_targets = []
-    all_predictions = []
+    current_lr = get_lr(optimizer)
 
     for i, (inputs, targets) in enumerate(data_loader):
         start_time = time.time()
@@ -23,24 +21,19 @@ def train_epoch(epoch,
         targets = targets.to(device, non_blocking=True)
         outputs = model(inputs)
         loss = criterion(outputs, targets)
-
+        # import pdb; pdb.set_trace()
         losses.update(loss.item(), inputs.size(0))
-
-        all_predictions.extend(outputs.cpu().detach().numpy())
-        all_targets.extend(targets.cpu().detach().numpy())
-
-        end_time = time.time()
-        print_color(f'Training {epoch:2d} | Step [{i:{len(str(len(data_loader)))}}/{len(data_loader)}] | Elapsed Time {end_time - start_time:.3f} | Loss {losses.avg:.5f}', Colors.GREEN)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    
-    # After the epoch, calculate overall mAP
-    all_predictions = np.concatenate(all_predictions, axis=0)
-    all_targets = np.concatenate(all_targets, axis=0)
 
-    # Compute mAP using sklearn's average_precision_score
-    epoch_mAP = average_precision_score(all_targets, all_predictions, average='macro')
+        end_time = time.time()
+        print_color(f'Training {epoch:2d} | Step [{i:{len(str(len(data_loader)))}}/{len(data_loader)}] | Elapsed Time {end_time - start_time:.3f} | Lr {current_lr} | Loss {losses.avg:.5f}', Colors.GREEN)
 
-    print_color(f'Training {epoch:3} | mAP {epoch_mAP:5f}', Colors.RED)
+        if tb_writer is not None:
+            tb_writer.add_scalar('train/batch/loss', losses.avg, i)
+
+    if tb_writer is not None:
+        tb_writer.add_scalar('train/epoch/loss', losses.avg, epoch)
+        tb_writer.add_scalar('train/epoch/lr', current_lr, epoch)

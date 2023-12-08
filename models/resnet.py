@@ -148,7 +148,7 @@ class ResNet(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(block_inplanes[3] * block.expansion, n_classes)
-        self.sigmoid = nn.Sigmoid()
+        
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight,
@@ -209,7 +209,6 @@ class ResNet(nn.Module):
 
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        x = self.sigmoid(x)
 
         return x
 

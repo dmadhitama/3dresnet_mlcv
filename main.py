@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 import torch
-from torch.nn import BCELoss
+from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 from torch.optim import SGD, lr_scheduler
 
 from opts import parse_opts
@@ -26,7 +26,8 @@ from temporal_transforms import (LoopPadding, TemporalRandomCrop,
 from temporal_transforms import Compose as TemporalCompose
 from dataset import get_training_data, get_validation_data
 from training import train_epoch
-from utils import Colors, print_color 
+from utils import Colors, print_color
+from torch.utils.tensorboard import SummaryWriter
 
 
 def json_serial(obj):
@@ -196,23 +197,27 @@ def main_worker(opt):
     model.to(opt.device)
 
     parameters = model.parameters()
-    criterion = BCELoss().to(opt.device)
+    class_weights = torch.ones(3142) * 333.0
+    
+    criterion = BCEWithLogitsLoss(weight=class_weights).to(opt.device)
 
     if not opt.no_train:
         (train_loader, optimizer, scheduler) = get_train_utils(opt, parameters)
     if not opt.no_val:
         val_loader = get_val_utils(opt)
 
+    tb_writer = SummaryWriter(log_dir=opt.result_path)
+
     for i in range(opt.begin_epoch, opt.n_epochs + 1):
         if not opt.no_train:
-            train_epoch(i, train_loader, model, criterion, optimizer, opt.device)
+            train_epoch(i, train_loader, model, criterion, optimizer, opt.device, tb_writer)
 
             if i % opt.checkpoint == 0:
                 save_file_path = opt.result_path / 'save_{}.pth'.format(i)
                 save_checkpoint(save_file_path, i, opt.arch, model, optimizer,scheduler)
 
         if not opt.no_val:
-            val_loss = val_epoch(i, val_loader, model, criterion, opt.device)
+            val_loss = val_epoch(i, val_loader, model, criterion, opt.device, tb_writer)
         
         if not opt.no_train and opt.lr_scheduler == 'multistep':
             scheduler.step()
