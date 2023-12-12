@@ -1,4 +1,5 @@
 import csv
+from functools import partialmethod
 
 class Colors:
     RESET = "\033[0m"
@@ -58,3 +59,9 @@ def get_lr(optimizer):
         lrs.append(lr)
 
     return max(lrs)
+
+def partialclass(cls, *args, **kwargs):
+    class PartialClass(cls):
+        __init__ = partialmethod(cls.__init__, *args, **kwargs)
+
+    return PartialClass

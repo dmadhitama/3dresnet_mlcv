@@ -125,7 +125,7 @@ def parse_opts():
                         default='hvu',
                         type=str,
                         help=('dataset for mean values of mean subtraction'
-                              '(activitynet | kinetics | 0.5 | hvu)'))
+                              '(hvu)'))
     
     parser.add_argument(
         '--value_scale',
@@ -164,8 +164,9 @@ def parse_opts():
                         default=200,
                         type=int,
                         help='Number of total epochs to run')
+    
     parser.add_argument('--n_val_samples',
-                        default=3,
+                        default=5,
                         type=int,
                         help='Number of validation samples for each activity')
     
@@ -238,6 +239,11 @@ def parse_opts():
                         default=1,
                         type=int,
                         help='Manually set random seed')
+    
+    parser.add_argument('--resnext_cardinality',
+                        default=32,
+                        type=int,
+                        help='ResNeXt cardinality')
     
     args = parser.parse_args()
 

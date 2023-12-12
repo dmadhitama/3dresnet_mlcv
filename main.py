@@ -6,7 +6,7 @@ import os
 import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
-from torch.optim import SGD, lr_scheduler, Adam
+from torch.optim import SGD, lr_scheduler
 
 from opts import parse_opts
 from model import (generate_model, load_pretrained_model,
@@ -25,7 +25,7 @@ from temporal_transforms import (LoopPadding, TemporalRandomCrop,
                                  SlidingWindow, TemporalSubsampling)
 
 from temporal_transforms import Compose as TemporalCompose
-from dataset import get_training_data, get_validation_data
+from dataset import get_training_data, get_validation_data, get_validation_data_multiclips
 from training import train_epoch
 from utils import Colors, print_color
 from torch.utils.tensorboard import SummaryWriter
@@ -42,7 +42,7 @@ def get_opt():
         opt.val_path = opt.root_path / opt.val_path
         opt.annotation_path = opt.root_path / opt.annotation_path
         opt.result_path = opt.root_path / opt.result_path
-        
+
         if opt.resume_path is not None:
             opt.resume_path = opt.root_path / opt.resume_path
         if opt.pretrain_path is not None:
@@ -93,15 +93,16 @@ def get_train_utils(opt, model_parameters):
     spatial_transform = Compose(spatial_transform)
 
     assert opt.train_t_crop in ['random', 'center']
+    
     temporal_transform = []
     if opt.sample_t_stride > 1:
         temporal_transform.append(TemporalSubsampling(opt.sample_t_stride))
 
     if opt.train_t_crop == 'random':
         temporal_transform.append(TemporalRandomCrop(opt.sample_duration))
-
     elif opt.train_t_crop == 'center':
         temporal_transform.append(TemporalCenterCrop(opt.sample_duration))
+        
     temporal_transform = TemporalCompose(temporal_transform)
 
     train_data = get_training_data(opt.train_path, opt.annotation_path,
@@ -147,7 +148,6 @@ def get_val_utils(opt):
     ]
 
     spatial_transform.extend([ScaleValue(opt.value_scale), normalize])
-
     spatial_transform = Compose(spatial_transform)
 
     temporal_transform = []
@@ -167,25 +167,46 @@ def get_val_utils(opt):
                                     spatial_transform,
                                     temporal_transform)
 
-
     val_loader = torch.utils.data.DataLoader(val_data,
                                              batch_size=(opt.batch_size),
                                              shuffle=False,
-                                             num_workers=opt.n_threads
+                                             num_workers=opt.n_threads,
+                                             pin_memory=True,
                                              )
     return val_loader
 
-def resume_model(resume_path, arch, model):
-    print('loading checkpoint {} model'.format(resume_path))
-    checkpoint = torch.load(resume_path, map_location='cpu')
-    assert arch == checkpoint['arch']
+def get_val_utils_multiclips(opt):
+    print_color("Get Multi Validation Dataset", Colors.RED)
+    normalize = Normalize(opt.mean, opt.std)
 
-    if hasattr(model, 'module'):
-        model.module.load_state_dict(checkpoint['state_dict'])
-    else:
-        model.load_state_dict(checkpoint['state_dict'])
+    spatial_transform = [
+        Resize(opt.sample_size),
+        CenterCrop(opt.sample_size),
+        ToTensor()
+    ]
 
-    return model
+    spatial_transform.extend([ScaleValue(opt.value_scale), normalize])
+    spatial_transform = Compose(spatial_transform)
+
+    temporal_transform = []
+    if opt.sample_t_stride > 1:
+        temporal_transform.append(TemporalSubsampling(opt.sample_t_stride))
+    
+    temporal_transform.append(TemporalEvenCrop(opt.sample_duration, opt.n_val_samples))
+    
+    temporal_transform = TemporalCompose(temporal_transform)
+    val_data, collate_fn = get_validation_data_multiclips(opt.val_path,
+                                    opt.annotation_path, opt.dataset,
+                                    spatial_transform,
+                                    temporal_transform)
+
+    val_loader = torch.utils.data.DataLoader(val_data,
+                                             batch_size=(opt.batch_size // opt.n_val_samples),
+                                             shuffle=False,
+                                             pin_memory=True,
+                                             num_workers=opt.n_threads,
+                                             collate_fn=collate_fn)
+    return val_loader
 
 def save_checkpoint(save_file_path, epoch, arch, model, optimizer, scheduler):
     if hasattr(model, 'module'):
@@ -201,6 +222,18 @@ def save_checkpoint(save_file_path, epoch, arch, model, optimizer, scheduler):
     }
     torch.save(save_states, save_file_path)
 
+def resume_model(resume_path, arch, model):
+    print('loading checkpoint {} model'.format(resume_path))
+    checkpoint = torch.load(resume_path, map_location='cpu')
+    assert arch == checkpoint['arch']
+
+    if hasattr(model, 'module'):
+        model.module.load_state_dict(checkpoint['state_dict'])
+    else:
+        model.load_state_dict(checkpoint['state_dict'])
+
+    return model
+
 def main_worker(opt):
     random.seed(opt.manual_seed)
     np.random.seed(opt.manual_seed)
@@ -208,6 +241,7 @@ def main_worker(opt):
     loss_scale = 333.0
     
     model = generate_model(opt)
+
     if opt.pretrain_path:
         model = load_pretrained_model(model, opt.pretrain_path, opt.model,
                                       opt.n_finetune_classes)
@@ -217,7 +251,7 @@ def main_worker(opt):
     if torch.cuda.device_count() > 1:
         print_color(f'Use {torch.cuda.device_count()} GPUs', Colors.RED)
         model = torch.nn.DataParallel(model)
-            
+    
     model.to(opt.device)
 
     if opt.pretrain_path:
@@ -225,7 +259,7 @@ def main_worker(opt):
     else:
         parameters = model.parameters()
 
-    class_weights = torch.ones(opt.n_finetune_classes if opt.pretrain_path is not None else opt.n_classes) * loss_scale
+    class_weights = torch.ones(opt.n_classes) * loss_scale
     criterion = BCEWithLogitsLoss(weight=class_weights).to(opt.device)
 
     if not opt.no_train:
@@ -248,9 +282,9 @@ def main_worker(opt):
         
         if not opt.no_train and opt.lr_scheduler == 'multistep':
             scheduler.step()
-            
+
 if __name__ == '__main__':
     opt = get_opt()
-
+    
     opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     main_worker(opt)

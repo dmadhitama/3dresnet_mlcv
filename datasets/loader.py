@@ -1,8 +1,4 @@
-import io
-
-import h5py
 from PIL import Image
-
 
 class ImageLoaderPIL(object):
 
@@ -11,7 +7,6 @@ class ImageLoaderPIL(object):
         with path.open('rb') as f:
             with Image.open(f) as img:
                 return img.convert('RGB')
-
 
 class VideoLoader(object):
 

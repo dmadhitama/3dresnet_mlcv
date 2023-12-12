@@ -1,4 +1,3 @@
-import math
 from functools import partial
 
 import torch
@@ -15,7 +14,6 @@ def conv3x3x3(in_planes, out_planes, stride=1):
                      stride=stride,
                      padding=1,
                      bias=False)
-
 
 def conv1x1x1(in_planes, out_planes, stride=1):
     return nn.Conv3d(in_planes,
