@@ -6,10 +6,11 @@ import os
 import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
-from torch.optim import SGD, lr_scheduler
+from torch.optim import SGD, lr_scheduler, Adam
 
 from opts import parse_opts
-from model import (generate_model)
+from model import (generate_model, load_pretrained_model,
+                   get_fine_tuning_parameters)
 from mean import get_mean_std
 from validation import val_epoch
 
@@ -29,11 +30,9 @@ from training import train_epoch
 from utils import Colors, print_color
 from torch.utils.tensorboard import SummaryWriter
 
-
 def json_serial(obj):
     if isinstance(obj, Path):
         return str(obj)
-
 
 def get_opt():
     opt = parse_opts()
@@ -43,18 +42,25 @@ def get_opt():
         opt.val_path = opt.root_path / opt.val_path
         opt.annotation_path = opt.root_path / opt.annotation_path
         opt.result_path = opt.root_path / opt.result_path
+        
+        if opt.resume_path is not None:
+            opt.resume_path = opt.root_path / opt.resume_path
+        if opt.pretrain_path is not None:
+            opt.pretrain_path = opt.root_path / opt.pretrain_path
+
+    if opt.pretrain_path is not None:
+        opt.n_finetune_classes = opt.n_classes
+        opt.n_classes = opt.n_pretrain_classes
 
     opt.arch = '{}-{}'.format(opt.model, opt.model_depth)
     opt.begin_epoch = 1
     opt.mean, opt.std = get_mean_std(opt.value_scale, dataset=opt.mean_dataset)
     opt.n_input_channels = 3
     
-    # print_color(opt, Colors.MAGENTA)
     with (opt.result_path / 'opts.json').open('w') as opt_file:
         json.dump(vars(opt), opt_file, default=json_serial)
 
     return opt
-
 
 def get_train_utils(opt, model_parameters):
     print_color("Get Train Dataset", Colors.YELLOW)
@@ -169,6 +175,18 @@ def get_val_utils(opt):
                                              )
     return val_loader
 
+def resume_model(resume_path, arch, model):
+    print('loading checkpoint {} model'.format(resume_path))
+    checkpoint = torch.load(resume_path, map_location='cpu')
+    assert arch == checkpoint['arch']
+
+    if hasattr(model, 'module'):
+        model.module.load_state_dict(checkpoint['state_dict'])
+    else:
+        model.load_state_dict(checkpoint['state_dict'])
+
+    return model
+
 def save_checkpoint(save_file_path, epoch, arch, model, optimizer, scheduler):
     if hasattr(model, 'module'):
         model_state_dict = model.module.state_dict()
@@ -188,16 +206,26 @@ def main_worker(opt):
     np.random.seed(opt.manual_seed)
     torch.manual_seed(opt.manual_seed)
     loss_scale = 333.0
-        
+    
     model = generate_model(opt)
+    if opt.pretrain_path:
+        model = load_pretrained_model(model, opt.pretrain_path, opt.model,
+                                      opt.n_finetune_classes)
+    if opt.resume_path is not None:
+        model = resume_model(opt.resume_path, opt.arch, model)
+
     if torch.cuda.device_count() > 1:
         print_color(f'Use {torch.cuda.device_count()} GPUs', Colors.RED)
         model = torch.nn.DataParallel(model)
-    
+            
     model.to(opt.device)
 
-    parameters = model.parameters()
-    class_weights = torch.ones(opt.n_classes) * loss_scale
+    if opt.pretrain_path:
+        parameters = get_fine_tuning_parameters(model, opt.ft_begin_module)
+    else:
+        parameters = model.parameters()
+
+    class_weights = torch.ones(opt.n_finetune_classes if opt.pretrain_path is not None else opt.n_classes) * loss_scale
     criterion = BCEWithLogitsLoss(weight=class_weights).to(opt.device)
 
     if not opt.no_train:
@@ -220,7 +248,7 @@ def main_worker(opt):
         
         if not opt.no_train and opt.lr_scheduler == 'multistep':
             scheduler.step()
-
+            
 if __name__ == '__main__':
     opt = get_opt()
 

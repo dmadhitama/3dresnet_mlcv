@@ -5,10 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 def get_inplanes():
     return [64, 128, 256, 512]
-
 
 def conv3x3x3(in_planes, out_planes, stride=1):
     return nn.Conv3d(in_planes,
@@ -25,7 +23,6 @@ def conv1x1x1(in_planes, out_planes, stride=1):
                      kernel_size=1,
                      stride=stride,
                      bias=False)
-
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -58,7 +55,6 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         return out
-
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -97,7 +93,6 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         return out
-
 
 class ResNet(nn.Module):
 
@@ -211,7 +206,6 @@ class ResNet(nn.Module):
         x = self.fc(x)
 
         return x
-
 
 def generate_model(model_depth, **kwargs):
     assert model_depth in [10, 18, 34, 50, 101, 152, 200]

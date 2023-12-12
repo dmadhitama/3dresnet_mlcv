@@ -15,6 +15,7 @@ def train_epoch(epoch,
     current_lr = get_lr(optimizer)
 
     for i, (inputs, targets) in enumerate(data_loader):
+
         start_time = time.time()
         inputs = inputs.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)

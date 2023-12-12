@@ -1,7 +1,6 @@
 import random
 import math
 
-
 class Compose(object):
 
     def __init__(self, transforms):
@@ -21,7 +20,6 @@ class Compose(object):
                 frame_indices = t(frame_indices)
         return frame_indices
 
-
 class LoopPadding(object):
 
     def __init__(self, size):
@@ -37,7 +35,6 @@ class LoopPadding(object):
 
         return out
 
-
 class TemporalBeginCrop(object):
 
     def __init__(self, size):
@@ -52,7 +49,6 @@ class TemporalBeginCrop(object):
             out.append(index)
 
         return out
-
 
 class TemporalCenterCrop(object):
 
@@ -74,7 +70,6 @@ class TemporalCenterCrop(object):
 
         return out
 
-
 class TemporalRandomCrop(object):
 
     def __init__(self, size):
@@ -93,7 +88,6 @@ class TemporalRandomCrop(object):
             out = self.loop(out)
 
         return out
-
 
 class TemporalEvenCrop(object):
 
@@ -122,7 +116,6 @@ class TemporalEvenCrop(object):
 
         return out
 
-
 class SlidingWindow(object):
 
     def __init__(self, size, stride=0):
@@ -147,7 +140,6 @@ class SlidingWindow(object):
 
         return out
 
-
 class TemporalSubsampling(object):
 
     def __init__(self, stride):
@@ -155,7 +147,6 @@ class TemporalSubsampling(object):
 
     def __call__(self, frame_indices):
         return frame_indices[::self.stride]
-
 
 class Shuffle(object):
 

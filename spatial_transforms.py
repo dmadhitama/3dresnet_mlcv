@@ -4,25 +4,21 @@ from torchvision.transforms import transforms
 from torchvision.transforms import functional as F
 from PIL import Image
 
-
 class Compose(transforms.Compose):
 
     def randomize_parameters(self):
         for t in self.transforms:
             t.randomize_parameters()
 
-
 class ToTensor(transforms.ToTensor):
 
     def randomize_parameters(self):
         pass
 
-
 class Normalize(transforms.Normalize):
 
     def randomize_parameters(self):
         pass
-
 
 class ScaleValue(object):
 
@@ -36,24 +32,20 @@ class ScaleValue(object):
     def randomize_parameters(self):
         pass
 
-
 class Resize(transforms.Resize):
 
     def randomize_parameters(self):
         pass
-
 
 class Scale(transforms.Resize):
 
     def randomize_parameters(self):
         pass
 
-
 class CenterCrop(transforms.CenterCrop):
 
     def randomize_parameters(self):
         pass
-
 
 class CornerCrop(object):
 
@@ -106,7 +98,6 @@ class CornerCrop(object):
         return self.__class__.__name__ + '(size={0}, crop_position={1}, randomize={2})'.format(
             self.size, self.crop_position, self.randomize)
 
-
 class RandomHorizontalFlip(transforms.RandomHorizontalFlip):
 
     def __init__(self, p=0.5):
@@ -126,7 +117,6 @@ class RandomHorizontalFlip(transforms.RandomHorizontalFlip):
 
     def randomize_parameters(self):
         self.random_p = random.random()
-
 
 class MultiScaleCornerCrop(object):
 
@@ -162,7 +152,6 @@ class MultiScaleCornerCrop(object):
         return self.__class__.__name__ + '(size={0}, scales={1}, interpolation={2})'.format(
             self.size, self.scales, self.interpolation)
 
-
 class RandomResizedCrop(transforms.RandomResizedCrop):
 
     def __init__(self,
@@ -184,7 +173,6 @@ class RandomResizedCrop(transforms.RandomResizedCrop):
     def randomize_parameters(self):
         self.randomize = True
 
-
 class ColorJitter(transforms.ColorJitter):
 
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
@@ -201,7 +189,6 @@ class ColorJitter(transforms.ColorJitter):
 
     def randomize_parameters(self):
         self.randomize = True
-
 
 class PickFirstChannels(object):
 

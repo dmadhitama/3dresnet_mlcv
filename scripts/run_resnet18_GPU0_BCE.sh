@@ -1,1 +1,0 @@
-CUDA_VISIBLE_DEVICES=0 python main.py --root_path data/hvu/ --train_path rawframes_train --val_path rawframes_val --annotation_path anno_hvu.json --result_path results/resnet18_BCE --dataset hvu --model resnet --model_depth 18 --n_classes 3142 --batch_size 256 --n_threads 16 --checkpoint 5 --sample_t_stride 2 --sample_duration 16

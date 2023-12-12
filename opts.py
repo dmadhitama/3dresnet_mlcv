@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
 
-
 def parse_opts():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root_path',
@@ -42,6 +41,17 @@ def parse_opts():
         help=
         'Number of classes (hvu:3124)'
     )
+    
+    parser.add_argument('--n_pretrain_classes',
+                        default=0,
+                        type=int,
+                        help=('Number of classes of pretraining task.'
+                              'When using --pretrain_path, this must be set.'))
+    
+    parser.add_argument('--pretrain_path',
+                        default=None,
+                        type=Path,
+                        help='Pretrained model path (.pth).')
     
     parser.add_argument('--sample_size',
                         default=112,
@@ -112,10 +122,10 @@ def parse_opts():
                         help='Weight Decay')
     
     parser.add_argument('--mean_dataset',
-                        default='kinetics',
+                        default='hvu',
                         type=str,
                         help=('dataset for mean values of mean subtraction'
-                              '(activitynet | kinetics | 0.5)'))
+                              '(activitynet | kinetics | 0.5 | hvu)'))
     
     parser.add_argument(
         '--value_scale',

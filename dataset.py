@@ -4,7 +4,6 @@ from datasets.loader import VideoLoader
 def image_name_formatter(x):
     return f'img_{x:05d}.jpg'
 
-
 def get_training_data(video_path,
                       annotation_path,
                       dataset_name,
@@ -28,7 +27,6 @@ def get_training_data(video_path,
                                 video_path_formatter=video_path_formatter)
 
     return training_data
-
 
 def get_validation_data(video_path,
                         annotation_path,
