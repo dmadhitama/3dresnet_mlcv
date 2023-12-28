@@ -27,10 +27,10 @@ Replace `multilabel` with your preferred environment name.
 List any additional dependencies and how to install them.
 ```bash
 pip install scikit-learn
-pip install tensorboard packaging
+pip install tensorboard packaging six
 ```
 
-## Project Description
+## Dataset (Holistic Video Understanding)
 
 Assume the structure of data directories is the following:
 
@@ -80,18 +80,85 @@ Assume the structure of data directories is the following:
 └── validation.py
 ```
 
-## Runnning the code
+## Training
 
-Train ResNet 18 on the HVU dataset (3142 classes) with 4 CPU threads (for data loading). Batch size is 128. Sample duration is 32. Stride 5. Save models at every 5 epochs. GPU:0 is used for the training.
+Train ResNet 18 on the HVU dataset (3142 classes) with 4 CPU threads (for data loading). 
+Batch size is 128. Sample duration is 32. Stride 5. Save models at every 5 epochs. 
+GPU:0 is used for the training.
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python main.py --root_path data/hvu/ --train_path rawframes_train --val_path rawframes_val --annotation_path anno_hvu.json --result_path results/r3d18_gpu0_128_thread_4_duration_32_stride_5_mean_kinetics --dataset hvu --model resnet --model_depth 18 --n_classes 3142 --batch_size 128 --sample_duration 32 --sample_t_stride 5 --n_threads 4 --checkpoint 5 --mean_dataset kinetics
+CUDA_VISIBLE_DEVICES=0 python main.py \
+--root_path data/hvu/ \
+--train_path rawframes_train \
+--val_path rawframes_val \
+--annotation_path anno_hvu.json \
+--result_path results/r3d18_gpu0_128_thread_4_duration_32_stride_5_mean_kinetics \
+--dataset hvu \
+--model resnet \
+--model_depth 18 \
+--n_classes 3142 \
+--batch_size 128 \
+--sample_duration 32 \
+--sample_t_stride 5 \
+--n_threads 4 \
+--checkpoint 5 \
+--mean_dataset kinetics
 ```
 
 Or use .sh in scripts folder.
 ```bash
 ./scripts/scripts/r3d18_gpu0_8_thread_4_duration_32_stride_5_mean_kinetics.sh
 ```
+
+## Validating
+
+Validate ResNet 18 on the HVU dataset (3142 classes) with 4 CPU threads (for data loading). 
+Batch size is 128. Sample duration is 32. Stride 5.
+GPU:0 is used for the training.
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python main.py \
+--root_path data/hvu/ \
+--train_path rawframes_train \
+--val_path rawframes_val \
+--annotation_path anno_hvu.json \
+--result_path results/r3d18_gpu0_128_thread_4_duration_32_stride_5_mean_kinetics \
+--dataset hvu \
+--model resnet \
+--model_depth 18 \
+--n_classes 3142 \
+--batch_size 128 \
+--sample_duration 32 \
+--sample_t_stride 5 \
+--n_threads 4 \
+--mean_dataset kinetics
+--no_train
+```
+
+## Performance
+
+<table>
+    <tr>
+        <td align="center">Model</td>
+        <td align="center">mAP (%)</td>
+        <td align="center">GFLOPs</td>
+    </tr>
+    <tr>
+        <td align="center">3D ResNet 18</td>
+        <td align="center">35.70</td>
+        <td align="center">16.67</td>
+    </tr>
+    <tr>
+        <td align="center">3D ResNet 34</td>
+        <td align="center">42.12</td>
+        <td align="center">25.46</td>
+    </tr>
+    <tr>
+        <td align="center">3D ResNext 50</td>
+        <td align="center">49.28</td>
+        <td align="center">22.07</td>
+    </tr>
+</table>
 
 ## Citation
 
